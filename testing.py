@@ -1,3 +1,5 @@
+#calculate the percentile-ranking of new products for both old and new users.
+
 import numpy as np
 #import pandas as pd
 import h5py
