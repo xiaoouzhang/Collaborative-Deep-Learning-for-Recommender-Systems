@@ -1,3 +1,5 @@
+#functions for the denoising autoencoder
+
 import numpy as np
 import math
 
