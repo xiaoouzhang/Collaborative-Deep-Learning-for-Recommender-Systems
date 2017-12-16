@@ -1,3 +1,5 @@
+#hybride model of SDAE and MF. One hidden layer is used in the SDAE.
+
 import h5py
 import numpy as np
 import random
