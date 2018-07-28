@@ -1,5 +1,5 @@
 # Collaborative-Deep-Learning-for-Recommender-Systems
-The hybrid model combining stacked denoising autoencoder (SDAE) with matrix factorization (MF) is applied, to predict the customer purchase behavior in the future month according to the purchase history and user information in the [Santander dataset](https://www.kaggle.com/c/santander-product-recommendation).
+The hybrid model combining stacked denoising autoencoder (SDAE) with matrix factorization (MF) is applied, to predict the customer purchase behavior in the future month according to the purchase history and user information in the [Santander dataset](https://www.kaggle.com/c/santander-product-recommendation). A bolg post for detailed discussions will be available shortly.
 
 This work is contributed by [Sampath Chanda](https://www.linkedin.com/in/sampathchanda/), [Suyin Wang](https://www.linkedin.com/in/suyin-wang-3934b543/) and [Xiaoou Zhang](https://www.linkedin.com/in/xiaoou-zhang-a9559211a/).
 
