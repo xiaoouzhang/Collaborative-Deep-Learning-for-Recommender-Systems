@@ -9,19 +9,20 @@ import auto_fun as auto
 import time
 
 INPUT_LAYER = 314
-HIDDEN_UNIT1 = 40
-HIDDEN_UNIT2 = 40
-LEARNING_RATE = 0.001/50
+
+LEARNING_RATE = 0.001/50*2
 EPOCH_NUM = 50
 #randomSeed = np.random.RandomState(42)
 mu, sigma = 0, 0.1
 l=40
+HIDDEN_UNIT1 = l
 alpha=40
 l2_u=100.0
 l2_v=100.0
 batch=500
-ratio_l=300.0
-ratio_u=1.0
+ratio_l=400.0
+ratio_u=0.5
+l1=0.01
 
 def main(denoise = True):
     #allMatrix, xtrain, xval, xtest,lenList,accList = getData()
@@ -43,20 +44,20 @@ def main(denoise = True):
     with h5py.File('rating_tr_numpy.h5', 'r') as hf:
         rating_mat = hf['rating'][:]
     
-    W1,W2,b1,b2,c1,c2 = auto.initialization(INPUT_LAYER,HIDDEN_UNIT1,HIDDEN_UNIT2,mu,sigma)
+    W1,b1,c1 = auto.initialization(INPUT_LAYER,[HIDDEN_UNIT1],mu,sigma)
     #define user and item matrices
     u=np.random.rand(rating_mat.shape[0],l)
     v=np.random.rand(rating_mat.shape[1],l)
     '''
-    with h5py.File('u_20_mono_40+100_auto.h5', 'r') as hf:
+    with h5py.File('u_40_mono_40+100_try_auto.h5', 'r') as hf:
         u = hf['u'][:]
-    with h5py.File('v_20_mono_40+100_auto.h5', 'r') as hf:
+    with h5py.File('v_40_mono_40+100_try_auto.h5', 'r') as hf:
         v = hf['v'][:]
-    with h5py.File('W1_20_mono_40+100.h5', 'r') as hf:
+    with h5py.File('W1_40_mono_40+100_try.h5', 'r') as hf:
         W1 = hf['W1'][:]
-    with h5py.File('b1_20_mono_40+100.h5', 'r') as hf:
+    with h5py.File('b1_40_mono_40+100_try.h5', 'r') as hf:
         b1 = hf['b1'][:]
-    with h5py.File('c1_20_mono_40+100.h5', 'r') as hf:
+    with h5py.File('c1_40_mono_40+100_try.h5', 'r') as hf:
         c1 = hf['c1'][:]
     '''
     #define preference and confidence matrices
@@ -65,7 +66,7 @@ def main(denoise = True):
     c=np.zeros(rating_mat.shape)
     c=1+alpha*rating_mat
 
-    iteration=30
+    iteration=100
 
     print('start')
     for iterate in range(iteration):
@@ -105,21 +106,23 @@ def main(denoise = True):
         print(np.linalg.norm(p-np.dot(u,v.T)))
         
         
-        W1,b1,c1 = auto.autoEncoder_mono(ratio_l,ratio_u,batch,W1,xtrain,u,b1,c1,accList,EPOCH_NUM,LEARNING_RATE,denoise = True)
+        W1,b1,c1 = auto.autoEncoder_mono(ratio_l,ratio_u,batch,W1,xtrain,u,b1,c1,accList,EPOCH_NUM,LEARNING_RATE,l1,denoise = True)
         hidden = auto.getoutPut_mono(W1,b1,xtrain,accList)
         u=hidden
         print(np.linalg.norm(p-np.dot(u,v.T)))
     
-    with h5py.File('u_20_mono_40+100_auto.h5', 'w') as hf:
+    with h5py.File('u_40_mono_40+100_try_auto.h5', 'w') as hf:
         hf.create_dataset("u",  data=u)
-    with h5py.File('v_20_mono_40+100_auto.h5', 'w') as hf:
+    with h5py.File('v_40_mono_40+100_try_auto.h5', 'w') as hf:
         hf.create_dataset("v",  data=v)
-    with h5py.File('W1_20_mono_40+100.h5', 'w') as hf:
+    with h5py.File('W1_40_mono_40+100_try.h5', 'w') as hf:
         hf.create_dataset("W1",  data=W1)
-    with h5py.File('b1_20_mono_40+100.h5', 'w') as hf:
+    with h5py.File('b1_40_mono_40+100_try.h5', 'w') as hf:
         hf.create_dataset("b1",  data=b1)
-    with h5py.File('c1_20_mono_40+100.h5', 'w') as hf:
+    with h5py.File('c1_40_mono_40+100_try.h5', 'w') as hf:
         hf.create_dataset("c1",  data=c1)
+    with h5py.File('h_40_mono_40+100_auto_try.h5', 'w') as hf:
+        hf.create_dataset("hidden",  data=hidden)
     
     #making_graph(trainLoss, valiLoss, testLoss)
     
