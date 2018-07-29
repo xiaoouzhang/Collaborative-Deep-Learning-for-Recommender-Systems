@@ -1,18 +1,34 @@
-#functions for the denoising autoencoder
-
 import numpy as np
 import math
 
 randomSeed = np.random.RandomState(42)
 
-def initialization(INPUT_LAYER,HIDDEN_UNIT1,HIDDEN_UNIT2,mu,sigma):
-    W1 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT1,INPUT_LAYER])
-    b1 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT1])
-    W2 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT2,HIDDEN_UNIT1])
-    b2 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT2])
-    c2 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT1])
+def initialization(INPUT_LAYER,HIDDEN_UNIT,mu,sigma):
+    NUM_HIDDEN=len(HIDDEN_UNIT)
+    
+    W1 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[0],INPUT_LAYER])
+    b1 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[0]])
     c1 = randomSeed.normal(mu, sigma,[INPUT_LAYER])
-    return W1,W2,b1,b2,c1,c2
+    if NUM_HIDDEN==1:
+        return W1, b1, c1
+    elif NUM_HIDDEN==2:
+        W2 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[1],HIDDEN_UNIT[0]])
+        b2 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[1]])
+        c2 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[0]])
+        return W1,W2,b1,b2,c1,c2
+    elif HIDDEN==3:
+        W2 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[1],HIDDEN_UNIT[0]])
+        b2 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[1]])
+        c2 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[0]])
+        W3 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[2],HIDDEN_UNIT[1]])
+        b3 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[2]])
+        c3 = randomSeed.normal(mu, sigma,[HIDDEN_UNIT[1]])
+        
+        return W1,W2,W3,b1,b2,b3,c1,c2,c3
+    else:
+        print('too much layers')
+        return 0
+
 
 
 def preActivation(W,x,b):
@@ -57,6 +73,7 @@ def getLoss(W1,W2,xtrain,u,b1,b2,c1,c2,accList):
                 
         A2 = preActivation(W2,h1,b2)
         h2 = tanh_forward(A2)
+        #h2=A2
         
         A3 = preActivation(W2.T,h2,c2)
         h3 = tanh_forward(A3)
@@ -91,7 +108,7 @@ def getLoss(W1,W2,xtrain,u,b1,b2,c1,c2,accList):
     loss_enc=np.sum(np.square(h2-u))/xtrain.shape[0]
     return meanLoss,loss_enc
 
-def autoEncoder(ratio_l,ratio_u,batch,W1,W2,xtrain,u,b1,b2,c1,c2,accList,EPOCH_NUM,LEARNING_RATE,denoise = True):
+def autoEncoder(ratio_l,ratio_u,batch,W1,W2,xtrain,u,b1,b2,c1,c2,accList,EPOCH_NUM,LEARNING_RATE,l1,denoise = True):
     ## forward Propogation
     # var0, var1, var2, var3, var4, var5, var6, var7, var8, var9, \
     # var10, var11, var12, var13, var14, var15, var16, var17 = getIndVar(xtrain, lenList)
@@ -126,6 +143,7 @@ def autoEncoder(ratio_l,ratio_u,batch,W1,W2,xtrain,u,b1,b2,c1,c2,accList,EPOCH_N
                 
                 A2 = preActivation(W2,h1,b2)
                 h2 = tanh_forward(A2)
+                #h2 = (A2)
                 
                 A3 = preActivation(W2.T,h2,c2)
                 h3 = tanh_forward(A3)
@@ -166,6 +184,7 @@ def autoEncoder(ratio_l,ratio_u,batch,W1,W2,xtrain,u,b1,b2,c1,c2,accList,EPOCH_N
                 dLdh2 = np.dot(dLdA3,W2.T)    #batch*hidden2
 
                 dLdA2 = np.multiply(dLdh2,tanh_backward(A2))
+                #dLdA2=dLdh2
                 dLdW2_in= np.dot(dLdA2.T,h1) #hidden2*hidden1
                 dLdb2 = np.sum(dLdA2,axis=0)
                 dLdh1 = np.dot(dLdA2,W2)   #batch*hidden1
@@ -178,6 +197,7 @@ def autoEncoder(ratio_l,ratio_u,batch,W1,W2,xtrain,u,b1,b2,c1,c2,accList,EPOCH_N
                 
                 dudh2=h2-u_sample
                 dudA2 = np.multiply(dudh2,tanh_backward(A2))
+                #dudA2=dudh2
                 dudW2= np.dot(dudA2.T,h1) #hidden2*hidden1
                 dudb2 = np.sum(dudA2,axis=0)
                 dudh1 = np.dot(dudA2,W2)   #batch*hidden1
@@ -191,10 +211,10 @@ def autoEncoder(ratio_l,ratio_u,batch,W1,W2,xtrain,u,b1,b2,c1,c2,accList,EPOCH_N
                 #dudW2=0
                 #dudb1=0
                 #dudb2=0
-                dW1=((dLdW1_out.T + dLdW1_in)/ratio_l+dudW1/ratio_u)
+                dW1=((dLdW1_out.T + dLdW1_in)/ratio_l+dudW1/ratio_u+l1*np.sign(W1))
                 W1 += -LEARNING_RATE * (dW1+beta*dW10)
                 dW10=(dW1+beta*dW10)
-                dW2=((dLdW2_out.T + dLdW2_in)/ratio_l+dudW2/ratio_u)
+                dW2=((dLdW2_out.T + dLdW2_in)/ratio_l+dudW2/ratio_u+l1*np.sign(W2))
                 W2 += -LEARNING_RATE * (dW2+beta*dW20)
                 dW20=(dW2+beta*dW20)
                 db1=(dLdb1/ratio_l + dudb1/ratio_u)
@@ -241,9 +261,10 @@ def getoutPut(W1,W2,b1,b2,x,accList):
                 
     A2 = preActivation(W2,h1,b2)
     h2 = tanh_forward(A2)
+    #h2=A2
     return h2
 
-def autoEncoder_mono(ratio_l,ratio_u,batch,W1,xtrain,u,b1,c1,accList,EPOCH_NUM,LEARNING_RATE,denoise = True):
+def autoEncoder_mono(ratio_l,ratio_u,batch,W1,xtrain,u,b1,c1,accList,EPOCH_NUM,LEARNING_RATE,l1,denoise = True):
     ## forward Propogation
     # var0, var1, var2, var3, var4, var5, var6, var7, var8, var9, \
     # var10, var11, var12, var13, var14, var15, var16, var17 = getIndVar(xtrain, lenList)
@@ -315,7 +336,7 @@ def autoEncoder_mono(ratio_l,ratio_u,batch,W1,xtrain,u,b1,c1,accList,EPOCH_NUM,L
                 #dudb1=0
                 #dudb2=0
                 
-                W1 += -LEARNING_RATE * ((dLdW1_out.T + dLdW1_in)/ratio_l+dudW1/ratio_u)
+                W1 += -LEARNING_RATE * ((dLdW1_out.T + dLdW1_in)/ratio_l+dudW1/ratio_u+l1*np.sign(W1))
                 b1 += -LEARNING_RATE * (dLdb1/ratio_l + dudb1/ratio_u)
                 c1 += -LEARNING_RATE * dLdc1/ratio_l
 
@@ -368,3 +389,4 @@ def getoutPut_mono(W1,b1,x,accList):
     h1 = tanh_forward(A1)
     
     return h1
+
